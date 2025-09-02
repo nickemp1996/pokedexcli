@@ -9,43 +9,50 @@ import (
 	"net/http"
 	"pokedexcli/internal/structs"
 	"pokedexcli/internal/config"
+	"pokedexcli/internal/pokecache"
 )
 
+var C *pokecache.Cache = pokecache.NewCache(30 * time.Second)
+
 func getLocationAreas(url string, cfg *config.Config) error {
-	client := &http.Client{
-		Timeout: 15 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
-		},
-	}
-	res, err := client.Get(url)
-	if err != nil {
-		return err
-	}
+    body, ok := C.Get(url)
+    if !ok {
+        client := &http.Client{
+            Timeout: 15 * time.Second,
+            Transport: &http.Transport{
+                TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+            },
+        }
+        res, err := client.Get(url)
+        if err != nil {
+            return err
+        }
+        defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if res.StatusCode > 299 {
-		return fmt.Errorf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		return err
-	}
+        if res.StatusCode > 299 {
+            b, _ := io.ReadAll(res.Body)
+            return fmt.Errorf("response failed with status code: %d and body: %s", res.StatusCode, string(b))
+        }
 
-	locationAreaList := structs.LocationAreaList{}
-	err = json.Unmarshal(body, &locationAreaList)
-	if err != nil {
-		return err
-	}
+        body, err = io.ReadAll(res.Body) // assign, not :=
+        if err != nil {
+            return err
+        }
 
-	for _, result := range locationAreaList.Results {
-		fmt.Println(result.Name)
-	}
+        C.Add(url, body)
+    }
 
-	cfg.Next = locationAreaList.Next
-	cfg.Previous = locationAreaList.Previous
+    var locationAreaList structs.LocationAreaList
+    if err := json.Unmarshal(body, &locationAreaList); err != nil {
+        return err
+    }
 
-	return nil
+    for _, r := range locationAreaList.Results {
+        fmt.Println(r.Name)
+    }
+    cfg.Next = locationAreaList.Next
+    cfg.Previous = locationAreaList.Previous
+    return nil
 }
 
 func Map(cfg *config.Config) error {
