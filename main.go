@@ -54,5 +54,11 @@ func main() {
 		description: "Displays details about the named Pokemon if the user has already caught that Pokemon",
 		callback:    commandInspect,
 	}
+
+	reg["pokedex"] = cliCommand{
+		name:        "pokedex",
+		description: "Lists the names of all the Pokemon the user has caught",
+		callback:    commandPokedex,
+	}
 	run(reg)
 }
