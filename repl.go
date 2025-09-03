@@ -25,7 +25,7 @@ func run(reg map[string]cliCommand) {
 			input := cleanInput(scanner.Text())
 			command, ok := reg[input[0]]
 			if ok {
-				err := command.callback(&cfg)
+				err := command.callback(&cfg, input[1:])
 				if err != nil {
 					fmt.Println("Error running command '", command.name, "':", err)
 				}

@@ -2,13 +2,12 @@ package main
 
 import (
 	"pokedexcli/internal/config"
-	"pokedexcli/internal/pokeapi"
 )
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config.Config) error
+	callback    func(*config.Config, []string) error
 }
 
 func main() {
@@ -29,13 +28,31 @@ func main() {
 	reg["map"] = cliCommand{
 		name:        "map",
 		description: "Displays the names of the next 20 location areas in the Pokemon world",
-		callback:    pokeapi.Map,
+		callback:    commandMap,
 	}
 
 	reg["mapb"] = cliCommand{
 		name:        "mapb",
 		description: "Displays the names of the previous 20 location areas in the Pokemon world",
-		callback:    pokeapi.Mapb,
+		callback:    commandMapb,
+	}
+
+	reg["explore"] = cliCommand{
+		name:        "explore",
+		description: "Displays the names of the Pokemon in a given location area",
+		callback:    commandExplore,
+	}
+
+	reg["catch"] = cliCommand{
+		name:        "catch",
+		description: "Gives the user the opportunity to try and catch the named Pokemon",
+		callback:    commandCatch,
+	}
+
+	reg["inspect"] = cliCommand{
+		name:        "inspect",
+		description: "Displays details about the named Pokemon if the user has already caught that Pokemon",
+		callback:    commandInspect,
 	}
 	run(reg)
 }
